@@ -1,1 +1,61 @@
-# Migracion-Proxmox-AltaPlaza
+# 🏢 Proyecto: Migración Multiplataforma, Consolidación y Alta Disponibilidad en Proxmox VE (AltaPlaza)
+
+## 📌 Contexto y Objetivo del Proyecto
+El cliente operaba con una infraestructura tecnológica severamente fragmentada y carente de un esquema centralizado de Recuperación ante Desastres (DRP)[cite: 5]. Los servicios críticos se encontraban dispersos en múltiples entornos: máquinas virtuales respaldadas en discos externos, servidores en VMware ESXi, cargas de trabajo en Microsoft Azure, datos en SharePoint y aplicaciones físicas locales[cite: 5]. 
+
+**Objetivo:** Diseñar, implementar y migrar la totalidad de la infraestructura hacia un clúster de alta disponibilidad on-premise basado en **Proxmox VE**, utilizando almacenamiento redundante **ZFS** y replicación asíncrona entre nodos para garantizar la continuidad operativa[cite: 5].
+
+---
+
+## 💻 Arquitectura de Hardware y Almacenamiento
+La infraestructura base se construyó sobre **dos (2) servidores HPE ProLiant DL360 Gen11** (Producción y Contingencia)[cite: 6], cada uno configurado con:
+
+* **Cómputo:** Procesador Intel Xeon Silver 4514Y con 128 GB de memoria RAM DDR5 ECC[cite: 6].
+* **Gestión Out-of-Band:** HPE iLO 6 (v1.77) en las IPs `192.168.8.15` y `192.168.8.16`[cite: 6, 7, 18, 19].
+* **Almacenamiento del Hipervisor:** Arreglo RAID 1 por hardware compuesto por 2 unidades SSD SATA HPE de 480 GB, dedicado exclusivamente a Proxmox VE para proteger el sistema operativo ante fallos[cite: 6, 7].
+* **Almacenamiento de Producción:** Pool ZFS (`zfs-data`) configurado en RAIDZ1 utilizando 4 discos SAS HPE de 2.4 TB a 10,000 RPM, garantizando integridad de datos y tolerancia a fallos para los discos de las máquinas virtuales[cite: 6, 7].
+
+## ⚙️ Topología de Red: Aislamiento y Segmentación
+Se implementó una separación estricta del tráfico físico para maximizar la seguridad y facilitar la gestión[cite: 8]:
+* **Puerto Físico 1 (Management):** Dedicado exclusivamente a la administración de Proxmox (`192.168.8.17` y `192.168.8.18`), la comunicación de clúster (Corosync) y accesos SSH. Aislado completamente sobre la **VLAN 8**[cite: 8].
+* **Puerto Físico 2 (Producción):** Configurado como Trunk 802.1Q a través del bridge `vmbr1`[cite: 9, 24]. Esto permite que el tráfico de las VMs sea transportado y segmentado mediante etiquetas VLAN dinámicas asignadas directamente desde la consola de Proxmox[cite: 9].
+
+---
+
+## 🛠️ Ejecución de Migración y Troubleshooting Técnico
+Se migraron exitosamente 12 servidores hacia el nuevo clúster, superando importantes desafíos técnicos según la plataforma de origen:
+
+### 1. Entorno Microsoft Azure (Windows Server 2025)
+* **Máquinas:** `SRV-ALTA-DC` (Active Directory, DNS, SYSVOL, FSMO) y `SRV-ALTA-SAGE50`[cite: 13, 15]. Migradas vía Veeam Backup & Replication v13[cite: 13, 15].
+* **Incidencia Técnica:** El Controlador de Dominio restaurado inició en Modo Seguro, impidiendo la carga de servicios AD DS y DNS[cite: 13]. Además, existía un DC secundario obsoleto registrado en Azure[cite: 13].
+* **Resolución:** Se corrigió el arranque (BCD), se asignó la IP productiva estática (`192.168.10.2`) y se ejecutó una limpieza profunda de metadatos de Active Directory (Metadata Cleanup) para eliminar registros DNS y referencias de replicación del servidor fantasma en la nube, recuperando el quórum del dominio y los roles FSMO[cite: 14].
+
+### 2. Entorno VMware ESXi
+* **Máquinas:** `SRV-ALTA-FTP-SERVER` y `SRV-ALTA-EQUS` (ERP)[cite: 11, 12].
+* **Incidencia Técnica 1 (I/O Errors):** Intentos de importar discos VMDK directamente fallaron por errores de lectura en el datastore VMFS[cite: 12]. Se resolvió orquestando un respaldo a nivel de bloque y restauración V2V utilizando Veeam v11[cite: 12].
+* **Incidencia Técnica 2 (Blue Screen of Death):** El servidor FTP presentó BSOD por incompatibilidad de controladores de almacenamiento IDE/SATA en Proxmox[cite: 11].
+* **Resolución:** Se inyectaron controladores VirtIO, se reconstruyó el Boot Configuration Data (BCD) y se ejecutaron comprobaciones de integridad lógica (`chkdsk` / `sfc`), recuperando el 100% de la operatividad[cite: 11, 12].
+
+### 3. Entorno Cloud SharePoint
+* **Máquina:** `SRV-ALTA-FILE-SERVER`[cite: 10].
+* **Ejecución:** Al no existir una máquina exportable, se provisionó un nuevo servidor Windows Server en Proxmox con un datastore ZFS de 2 TB y se descargó y reestructuró el árbol documental corporativo directamente desde SharePoint[cite: 10, 11].
+
+### 4. Backups en Discos Externos y Bare-Metal
+* Importación de discos y configuración de hardware virtual para sistemas como `SRV-ALTA-NAGIOS`, `SRV-ALTA-UNIFI` y `SRV-ALTA-DOCKER`[cite: 10, 12].
+* Migración P2V (Physical-to-Virtual) del servidor físico `SRV-ALTA-BMS` usando Veeam v13[cite: 15].
+
+---
+
+## 🛡️ Clúster y Recuperación ante Desastres (DRP)
+Una vez consolidadas las 12 cargas de trabajo en el nodo `srv-proxmox-01`, se unió el nodo de contingencia `srv-proxmox-02` para formar el Clúster "ALTA" (Quorate: Yes)[cite: 9, 23]. 
+Se eliminó la dependencia de trabajos de respaldo locales y se implementó la **Replicación ZFS a nivel de bloques**[cite: 16]. Todos los datasets de las máquinas virtuales productivas se sincronizan de forma asíncrona hacia el nodo secundario **cada 15 minutos (`*/15`)**, garantizando un RPO estricto y la capacidad de levantar los servicios en minutos ante un fallo del nodo principal[cite: 16, 31].
+
+---
+
+## 📸 Evidencias Fotográficas
+*(Arrastra aquí las imágenes pertinentes de tu proyecto para respaldar el portafolio)*
+
+1. **Dashboard HPE iLO 6:** Salud del hardware, componentes y configuración de RAM (128GB) en ambos nodos.
+2. **Dashboard Clúster Proxmox VE:** Estado del quórum (2 Nodos Online) y uso de recursos del nodo principal.
+3. **Consolidación de Producción:** Inventario completo de las 12 VMs operativas (Nagios, UniFi, FileServer, HelpDesk, FTP, Docker, Equs, OCS, AD DC, Sage50, Opus, BMS).
+4. **Almacenamiento ZFS & Tareas Cron:** Estado "ONLINE" del pool `zfs-data` y tabla `pvesr list` demostrando la automatización de la replicación cada 15 minutos.
