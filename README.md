@@ -54,7 +54,4 @@ Se eliminó la dependencia de trabajos de respaldo locales y se implementó la *
 
 ## Evidencias Fotográficas
 
-1. **Dashboard HPE iLO 6:** Salud del hardware, componentes y configuración de RAM (128GB) en ambos nodos.
-2. **Dashboard Clúster Proxmox VE:** Estado del quórum (2 Nodos Online) y uso de recursos del nodo principal.
-3. **Consolidación de Producción:** Inventario completo de las 12 VMs operativas (Nagios, UniFi, FileServer, HelpDesk, FTP, Docker, Equs, OCS, AD DC, Sage50, Opus, BMS).
-4. **Almacenamiento ZFS & Tareas Cron:** Estado "ONLINE" del pool `zfs-data` y tabla `pvesr list` demostrando la automatización de la replicación cada 15 minutos.
+> **Nota de Confidencialidad:** Por políticas de seguridad de la información y acuerdos de confidencialidad (NDA) con el cliente, las capturas de pantalla de la infraestructura en producción (consolas de administración HPE iLO 6, direcciones IP internas, inventario de máquinas virtuales y estado del almacenamiento ZFS) no se exponen públicamente en este repositorio. La ejecución técnica y la validación de los servicios migrados fueron certificadas y aprobadas en el documento de cierre formal del proyecto.
