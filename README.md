@@ -1,7 +1,7 @@
 # Proyecto: Migración Multiplataforma, Consolidación y Alta Disponibilidad en Proxmox VE (AltaPlaza)
 
 ## Contexto y Objetivo del Proyecto
-El cliente operaba con una infraestructura tecnológica severamente fragmentada y carente de un esquema centralizado de Recuperación ante Desastres (DRP). Los servicios críticos se encontraban dispersos en múltiples entornos: máquinas virtuales respaldadas en discos externos, servidores en VMware ESXi, cargas de trabajo en Microsoft Azure, datos en SharePoint y aplicaciones físicas locales. 
+El cliente operaba con una infraestructura tecnológica severamente fragmentada y carente de un esquema centralizado de Recuperación ante Desastres. Los servicios críticos se encontraban dispersos en múltiples entornos: máquinas virtuales respaldadas en discos externos, servidores en VMware ESXi, cargas de trabajo en Microsoft Azure, datos en SharePoint y aplicaciones físicas locales. 
 
 **Objetivo:** Diseñar, implementar y migrar la totalidad de la infraestructura hacia un clúster de alta disponibilidad on-premise basado en **Proxmox VE**, utilizando almacenamiento redundante **ZFS** y replicación asíncrona entre nodos para garantizar la continuidad operativa.
 
@@ -18,7 +18,7 @@ La infraestructura base se construyó sobre **dos (2) servidores HPE ProLiant DL
 ## Topología de Red: Aislamiento y Segmentación
 Se implementó una separación estricta del tráfico físico para maximizar la seguridad y facilitar la gestión:
 * **Puerto Físico 1 (Management):** Dedicado exclusivamente a la administración de Proxmox, la comunicación de clúster (Corosync) y accesos SSH. Aislado completamente sobre la **VLAN 8**.
-* **Puerto Físico 2 (Producción):** Configurado como Trunk 802.1Q a través del bridge `vmbr1`. Esto permite que el tráfico de las VMs sea transportado y segmentado mediante etiquetas VLAN dinámicas asignadas directamente desde la consola de Proxmox.
+* **Puerto Físico 2 (Producción):** Configurado como Trunk a través del bridge `vmbr1`. Esto permite que el tráfico de las VMs sea transportado y segmentado mediante etiquetas VLAN dinámicas asignadas directamente desde la consola de Proxmox.
 
 ---
 
