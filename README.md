@@ -1,4 +1,4 @@
-# Proyecto: Migración Multiplataforma, Consolidación y Alta Disponibilidad en Proxmox VE (AltaPlaza)
+# Proyecto: Migración Multiplataforma, Consolidación y Alta Disponibilidad en Proxmox VE
 
 ## Contexto y Objetivo del Proyecto
 El cliente operaba con una infraestructura tecnológica severamente fragmentada y carente de un esquema centralizado de Recuperación ante Desastres. Los servicios críticos se encontraban dispersos en múltiples entornos: máquinas virtuales respaldadas en discos externos, servidores en VMware ESXi, cargas de trabajo en Microsoft Azure, datos en SharePoint y aplicaciones físicas locales. 
